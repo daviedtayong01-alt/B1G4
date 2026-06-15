@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Avie's Workout Tracker | Track Your Gains</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #E74C3C;
+            --primary-dark: #C0392B;
+            --bg-dark: #0f0f1a;
+            --bg-card: rgba(255,255,255,0.05);
+            --text-white: #ffffff;
+            --text-gray: #aaaaaa;
+            --border: rgba(255,255,255,0.1);
+            --danger: #e74c3c;
+            --success: #2ECC71;
+            --warning: #F39C12;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+            color: var(--text-white);
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        header { text-align: center; margin-bottom: 30px; }
+        header h1 { font-size: 2.5rem; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        header p { color: var(--text-gray); }
+        .credit { font-size: 0.8rem; color: var(--text-gray); margin-top: 5px; }
+        h2 { font-size: 1.3rem; margin-bottom: 20px; border-left: 4px solid var(--primary); padding-left: 15px; }
+
+        /* Buttons */
+        .btn-primary { background: var(--primary); border: none; padding: 12px 24px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .btn-primary:hover { background: var(--primary-dark); transform: scale(1.01); }
+        .btn-secondary { background: rgba(255,255,255,0.1); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer; transition: all 0.2s; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+        .btn-danger { background: var(--danger); border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .btn-danger:hover { background: #c0392b; }
+
+        /* Exercise Grid - NO SCROLLING */
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .exercise-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-white);
+            text-align: center;
+        }
+        .exercise-btn:hover {
+            background: rgba(231,76,60,0.2);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .exercise-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .custom-exercise-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .custom-exercise-row input {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        .custom-exercise-row input:focus { outline: none; border-color: var(--primary); }
+
+        /* Form Row */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .form-field {
+            flex: 1;
+            min-width: 100px;
+        }
+        .form-field label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-gray);
+            margin-bottom: 5px;
+        }
+        .form-field input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .form-field input:focus { outline: none; border-color: var(--primary); }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--bg-card); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; text-align: center; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary); }
+        .stat-label { font-size: 0.8rem; color: var(--text-gray); margin-top: 5px; }
+
+        /* Sections */
+        .add-section, .chart-section, .history-section, .timer-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* History */
+        .history-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .workout-list { max-height: 400px; overflow-y: auto; }
+        .workout-item { background: rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .workout-item:hover { background: rgba(255,255,255,0.12); }
+        .workout-exercise { font-weight: bold; font-size: 1.1rem; color: var(--primary); }
+        .workout-details { font-size: 0.9rem; color: var(--text-gray); }
+        .workout-date { font-size: 0.75rem; color: #666; margin-top: 3px; }
+        .delete-workout { background: rgba(255,255,255,0.1); border: none; padding: 8px 16px; border-radius: 6px; color: var(--danger); cursor: pointer; font-size: 0.8rem; }
+        .delete-workout:hover { background: rgba(231,76,60,0.2); }
+
+        /* Timer */
+        .timer-display { font-size: 4rem; font-weight: bold; font-family: monospace; margin: 20px 0; color: var(--primary); text-align: center; }
+        .timer-buttons { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 15px; }
+        .timer-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; color: white; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+        .timer-btn:hover { background: var(--primary); border-color: var(--primary); }
+
+        .chart-select { margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); border-radius: 8px; color: white; width: 100%; max-width: 250px; cursor: pointer; }
+        .error-message { color: var(--danger); font-size: 0.85rem; margin-top: 12px; padding: 8px; background: rgba(231,76,60,0.1); border-radius: 6px; display: none; }
+        .loading { text-align: center; padding: 20px; color: var(--text-gray); }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            .exercise-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-row { flex-direction: column; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .workout-item { flex-direction: column; text-align: center; }
+            .timer-display { font-size: 2.5rem; }
+            header h1 { font-size: 1.8rem; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💪 Avie's Workout Tracker</h1>
+            <p>Track your exercises, sets, and progress — built by Avie</p>
+            <div class="credit">🏆 Created by Avie | Workout smarter, not harder</div>
+        </header>
+
+        <!-- Add Workout Section -->
+        <section class="add-section">
+            <h2>📝 Log Your Workout</h2>
+            
+            <!-- Exercise Selection - Grid of buttons (no scrolling!) -->
+            <div class="exercise-grid" id="exerciseGrid">
+                <button class="exercise-btn" data-exercise="Push-ups">💪 Push-ups</button>
+                <button class="exercise-btn" data-exercise="Pull-ups">💪 Pull-ups</button>
+                <button class="exercise-btn" data-exercise="Squats">🦵 Squats</button>
+                <button class="exercise-btn" data-exercise="Bench Press">🏋️ Bench Press</button>
+                <button class="exercise-btn" data-exercise="Deadlift">🏋️ Deadlift</button>
+                <button class="exercise-btn" data-exercise="Shoulder Press">🏋️ Shoulder Press</button>
+                <button class="exercise-btn" data-exercise="Lunges">🦵 Lunges</button>
+                <button class="exercise-btn" data-exercise="Plank">🧘 Plank</button>
+                <button class="exercise-btn" data-exercise="Running">🏃 Running</button>
+                <button class="exercise-btn" data-exercise="Burpees">🔥 Burpees</button>
+                <button class="exercise-btn" data-exercise="Leg Raises">🦵 Leg Raises</button>
+                <button class="exercise-btn" data-exercise="Russian Twists">🔄 Russian Twists</button>
+            </div>
+            
+            <!-- Custom Exercise -->
+            <div class="custom-exercise-row">
+                <input type="text" id="customExercise" placeholder="Or type your own exercise..." maxlength="50">
+            </div>
+            
+            <!-- Sets, Reps, Weight -->
+            <div class="form-row">
+                <div class="form-field">
+                    <label>🔢 SETS</label>
+                    <input type="number" id="sets" placeholder="Sets" min="1" max="100" value="3">
+                </div>
+                <div class="form-field">
+                    <label>🔁 REPS</label>
+                    <input type="number" id="reps" placeholder="Reps" min="1" max="500" value="10">
+                </div>
+                <div class="form-field">
+                    <label>⚖️ WEIGHT (kg)</label>
+                    <input type="number" id="weight" placeholder="Weight" min="0" max="1000" step="2.5" value="0">
+                </div>
+                <div class="form-field" style="flex: 0.5;">
+                    <label>&nbsp;</label>
+                    <button id="addWorkoutBtn" class="btn-primary">➕ ADD WORKOUT</button>
+                </div>
+            </div>
+            <div id="formError" class="error-message"></div>
+        </section>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-value" id="totalWorkouts">0</div><div class="stat-label">Total Workouts</div></div>
+            <div class="stat-card"><div class="stat-value" id="totalSets">0</div><div class="stat-label">Total Sets</div></div>
+            <div class="stat-card"><div class="stat-value" id="totalReps">0</div><div class="stat-label">Total Reps</div></div>
+            <div class="stat-card"><div class="stat-value" id="totalWeight">0</div><div class="stat-label">Total Volume (kg)</div></div>
+        </div>
+
+        <!-- Progress Chart -->
+        <section class="chart-section">
+            <h2>📈 Progress Chart</h2>
+            <canvas id="progressChart"></canvas>
+            <select id="chartExercise" class="chart-select"><option value="">📊 All exercises</option></select>
+            <div id="chartLoading" class="loading" style="display: none;">Loading chart...</div>
+        </section>
+
+        <!-- Workout History -->
+        <section class="history-section">
+            <h2>📋 Workout History</h2>
+            <div class="history-controls">
+                <button id="clearHistoryBtn" class="btn-danger">🗑️ Clear All</button>
+                <button id="exportDataBtn" class="btn-secondary">📤 Export CSV</button>
+            </div>
+            <div id="workoutList" class="workout-list"></div>
+        </section>
+
+        <!-- Rest Timer -->
+        <section class="timer-section">
+            <h2>⏱️ Rest Timer</h2>
+            <div class="timer-display" id="timerDisplay">01:00</div>
+            <div class="timer-buttons">
+                <button class="timer-btn" data-time="30">30s</button>
+                <button class="timer-btn" data-time="60">1 min</button>
+                <button class="timer-btn" data-time="90">1:30</button>
+                <button class="timer-btn" data-time="120">2 min</button>
+                <button class="timer-btn" data-time="180">3 min</button>
+            </div>
+            <button id="stopTimerBtn" class="btn-secondary" style="display: none;">⏹️ Stop Timer</button>
+        </section>
+    </div>
+
+    <script>
+        // ============================================
+        // AVIE'S WORKOUT TRACKER - PROFESSIONAL EDITION
+        // ============================================
+
+        // ---------- CONSTANTS ----------
+        const STORAGE_KEY = 'avie-workout-tracker';
+        let workouts = [];
+        let chart = null;
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let selectedExercise = '';
+
+        // ---------- DATA LAYER ----------
+        function loadData() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) workouts = JSON.parse(saved);
+                else workouts = [];
+            } catch (e) {
+                workouts = [];
+            }
+            updateAllUI();
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts));
+                updateAllUI();
+            } catch (e) { console.error('Save failed:', e); }
+        }
+
+        // ---------- EXERCISE SELECTION ----------
+        function initExerciseButtons() {
+            document.querySelectorAll('.exercise-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.exercise-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedExercise = btn.dataset.exercise;
+                    document.getElementById('customExercise').value = '';
+                };
+            });
+        }
+
+        function getSelectedExercise() {
+            const custom = document.getElementById('customExercise').value.trim();
+            if (custom) return custom;
+            if (selectedExercise) return selectedExercise;
+            return '';
+        }
+
+        // ---------- VALIDATION ----------
+        function sanitizeInput(str) {
+            return str.trim().replace(/[<>]/g, '');
+        }
+
+        function validateWorkout(exercise, sets, reps, weight) {
+            if (!exercise) throw new Error('Please select or enter an exercise');
+            if (exercise.length < 2 || exercise.length > 50) throw new Error('Exercise must be 2-50 characters');
+            if (!Number.isInteger(sets) || sets < 1 || sets > 100) throw new Error('Sets must be 1-100');
+            if (!Number.isInteger(reps) || reps < 1 || reps > 500) throw new Error('Reps must be 1-500');
+            if (isNaN(weight) || weight < 0 || weight > 1000) throw new Error('Weight must be 0-1000 kg');
+            return true;
+        }
+
+        // ---------- ADD WORKOUT ----------
+        function addWorkout() {
+            const exercise = getSelectedExercise();
+            const sets = parseInt(document.getElementById('sets').value);
+            const reps = parseInt(document.getElementById('reps').value);
+            const weight = parseFloat(document.getElementById('weight').value) || 0;
+
+            try {
+                validateWorkout(exercise, sets, reps, weight);
+                
+                const workout = {
+                    id: Date.now(),
+                    exercise: sanitizeInput(exercise),
+                    sets, reps, weight,
+                    date: new Date().toISOString(),
+                    timestamp: Date.now()
+                };
+                
+                workouts.unshift(workout);
+                saveData();
+                
+                document.getElementById('customExercise').value = '';
+                document.getElementById('weight').value = '0';
+                document.getElementById('sets').value = '3';
+                document.getElementById('reps').value = '10';
+                
+                // Keep exercise button highlight but clear custom
+                showTemporaryMessage('✅ Workout added!');
+                
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function deleteWorkout(id) {
+            if (confirm('Delete this workout?')) {
+                workouts = workouts.filter(w => w.id !== id);
+                saveData();
+            }
+        }
+
+        function deleteAllWorkouts() {
+            if (confirm('⚠️ Delete ALL workouts? This cannot be undone!')) {
+                workouts = [];
+                saveData();
+            }
+        }
+
+        // ---------- STATISTICS ----------
+        function calculateStats() {
+            const totalWorkouts = workouts.length;
+            const totalSets = workouts.reduce((sum, w) => sum + w.sets, 0);
+            const totalReps = workouts.reduce((sum, w) => sum + (w.reps * w.sets), 0);
+            const totalVolume = workouts.reduce((sum, w) => sum + (w.weight * w.sets * w.reps), 0);
+            return { totalWorkouts, totalSets, totalReps, totalVolume };
+        }
+
+        function getUniqueExercises() {
+            return [...new Set(workouts.map(w => w.exercise))];
+        }
+
+        function getVolumeByDate(exercise = null, limit = 14) {
+            let filtered = workouts;
+            if (exercise) filtered = workouts.filter(w => w.exercise === exercise);
+            
+            const grouped = {};
+            filtered.forEach(w => {
+                const date = new Date(w.date).toLocaleDateString();
+                grouped[date] = (grouped[date] || 0) + (w.weight * w.sets * w.reps);
+            });
+            
+            const sorted = Object.entries(grouped).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+            const limited = sorted.slice(-limit);
+            return { labels: limited.map(l => l[0]), values: limited.map(l => l[1]) };
+        }
+
+        // ---------- UI RENDERING ----------
+        function updateStatsUI() {
+            const stats = calculateStats();
+            document.getElementById('totalWorkouts').innerText = stats.totalWorkouts;
+            document.getElementById('totalSets').innerText = stats.totalSets;
+            document.getElementById('totalReps').innerText = stats.totalReps.toLocaleString();
+            document.getElementById('totalWeight').innerText = stats.totalVolume.toFixed(0);
+        }
+
+        function updateWorkoutListUI() {
+            const container = document.getElementById('workoutList');
+            if (workouts.length === 0) {
+                container.innerHTML = '<p style="color: #aaa; text-align: center;">No workouts yet. Add your first workout above!</p>';
+                return;
+            }
+            
+            container.innerHTML = workouts.map(w => `
+                <div class="workout-item">
+                    <div>
+                        <div class="workout-exercise">💪 ${escapeHtml(w.exercise)}</div>
+                        <div class="workout-details">${w.sets} sets × ${w.reps} reps${w.weight > 0 ? ` • ${w.weight} kg` : ''}</div>
+                        <div class="workout-date">${new Date(w.date).toLocaleString()}</div>
+                    </div>
+                    <button class="delete-workout" onclick="deleteWorkout(${w.id})">🗑️ Delete</button>
+                </div>
+            `).join('');
+        }
+
+        function updateChartExerciseSelect() {
+            const select = document.getElementById('chartExercise');
+            const exercises = getUniqueExercises();
+            select.innerHTML = '<option value="">📊 All exercises</option>' + 
+                exercises.map(e => `<option value="${escapeHtml(e)}">💪 ${escapeHtml(e)}</option>`).join('');
+        }
+
+        function updateChart() {
+            const exercise = document.getElementById('chartExercise').value;
+            const loadingDiv = document.getElementById('chartLoading');
+            loadingDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                try {
+                    const { labels, values } = getVolumeByDate(exercise || null);
+                    const ctx = document.getElementById('progressChart').getContext('2d');
+                    if (chart) chart.destroy();
+                    
+                    chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: exercise ? `${exercise} - Volume (kg)` : 'Total Volume (kg)',
+                                data: values,
+                                borderColor: '#E74C3C',
+                                backgroundColor: 'rgba(231,76,60,0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#E74C3C'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: { legend: { labels: { color: '#fff' } } },
+                            scales: {
+                                y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } },
+                                x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa', maxRotation: 45 } }
+                            }
+                        }
+                    });
+                } catch (err) { console.error('Chart error:', err); }
+                finally { loadingDiv.style.display = 'none'; }
+            }, 50);
+        }
+
+        function updateAllUI() {
+            updateStatsUI();
+            updateWorkoutListUI();
+            updateChartExerciseSelect();
+            updateChart();
+        }
+
+        // ---------- EXPORT ----------
+        function exportToCSV() {
+            if (workouts.length === 0) { alert('No workouts to export'); return; }
+            
+            let csv = '"Date","Exercise","Sets","Reps","Weight(kg)","Volume"\n';
+            workouts.forEach(w => {
+                const date = new Date(w.date).toLocaleDateString();
+                const volume = w.weight * w.sets * w.reps;
+                csv += `"${date}","${w.exercise}","${w.sets}","${w.reps}","${w.weight}","${volume}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `avie_workouts_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ---------- TIMER ----------
+        function startTimer(seconds) {
+            if (timerInterval) clearInterval(timerInterval);
+            timerSeconds = seconds;
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    alert('⏰ Timer finished! Time to work out!');
+                    document.getElementById('stopTimerBtn').style.display = 'none';
+                } else {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                }
+            }, 1000);
+            
+            document.getElementById('stopTimerBtn').style.display = 'inline-block';
+        }
+
+        function stopTimer() {
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            document.getElementById('stopTimerBtn').style.display = 'none';
+            document.getElementById('timerDisplay').innerText = '01:00';
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerSeconds / 60);
+            const secs = timerSeconds % 60;
+            document.getElementById('timerDisplay').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ---------- UI HELPERS ----------
+        function showError(msg) {
+            const errDiv = document.getElementById('formError');
+            errDiv.innerText = msg;
+            errDiv.style.display = 'block';
+            setTimeout(() => errDiv.style.display = 'none', 3000);
+        }
+
+        function showTemporaryMessage(msg) {
+            const errDiv = document.getElementById('formError');
+            errDiv.innerText = msg;
+            errDiv.style.color = '#2ECC71';
+            errDiv.style.display = 'block';
+            setTimeout(() => {
+                errDiv.style.display = 'none';
+                errDiv.style.color = '#e74c3c';
+            }, 2000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ---------- INITIALIZE ----------
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            initExerciseButtons();
+            
+            document.getElementById('addWorkoutBtn').onclick = addWorkout;
+            document.getElementById('clearHistoryBtn').onclick = deleteAllWorkouts;
+            document.getElementById('exportDataBtn').onclick = exportToCSV;
+            document.getElementById('stopTimerBtn').onclick = stopTimer;
+            document.getElementById('chartExercise').onchange = updateChart;
+            
+            document.querySelectorAll('.timer-btn').forEach(btn => {
+                btn.onclick = () => startTimer(parseInt(btn.dataset.time));
+            });
+            
+            window.deleteWorkout = deleteWorkout;
+        });
+    </script>
+</body>
+</html>
